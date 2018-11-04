@@ -16,11 +16,9 @@ package com.facebook.presto.kafka;
 import com.facebook.presto.spi.ConnectorHandleResolver;
 import com.facebook.presto.spi.NodeManager;
 import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.Connector;
 import com.facebook.presto.spi.connector.ConnectorContext;
 import com.facebook.presto.spi.connector.ConnectorFactory;
-import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorSplitManager;
 import com.facebook.presto.spi.type.TypeManager;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
@@ -43,13 +41,10 @@ public class KafkaConnectorFactory
         implements ConnectorFactory
 {
     private final Optional<Supplier<Map<SchemaTableName, KafkaTopicDescription>>> tableDescriptionSupplier;
-    private final ClassLoader classLoader;
 
-    KafkaConnectorFactory(Optional<Supplier<Map<SchemaTableName, KafkaTopicDescription>>> tableDescriptionSupplier,
-                          ClassLoader classLoader)
+    KafkaConnectorFactory(Optional<Supplier<Map<SchemaTableName, KafkaTopicDescription>>> tableDescriptionSupplier)
     {
         this.tableDescriptionSupplier = requireNonNull(tableDescriptionSupplier, "tableDescriptionSupplier is null");
-        this.classLoader = requireNonNull(classLoader, "classLoader is null");
     }
 
     @Override
@@ -70,7 +65,7 @@ public class KafkaConnectorFactory
         requireNonNull(catalogName, "catalogName is null");
         requireNonNull(config, "config is null");
 
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+        try {
             Bootstrap app = new Bootstrap(
                     new JsonModule(),
                     new KafkaConnectorModule(),
@@ -99,9 +94,8 @@ public class KafkaConnectorFactory
 
             return new KafkaConnector(lifeCycleManager,
                     metadata,
-                    new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
-                    recordSetProvider,
-                    classLoader);
+                    splitManager,
+                    recordSetProvider);
         }
         catch (Exception e) {
             throwIfUnchecked(e);
