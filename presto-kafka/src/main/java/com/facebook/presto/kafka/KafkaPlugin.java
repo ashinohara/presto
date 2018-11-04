@@ -42,6 +42,15 @@ public class KafkaPlugin
     @Override
     public synchronized Iterable<ConnectorFactory> getConnectorFactories()
     {
-        return ImmutableList.of(new KafkaConnectorFactory(tableDescriptionSupplier));
+        return ImmutableList.of(new KafkaConnectorFactory(tableDescriptionSupplier, getClassLoader()));
+    }
+
+    private static ClassLoader getClassLoader()
+    {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = KafkaPlugin.class.getClassLoader();
+        }
+        return classLoader;
     }
 }

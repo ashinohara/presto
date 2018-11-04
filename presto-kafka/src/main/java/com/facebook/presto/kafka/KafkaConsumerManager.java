@@ -77,7 +77,7 @@ public class KafkaConsumerManager
     private KafkaConsumer<byte[], byte[]> getConsumer(String bootstrapServers)
     {
         try {
-            Thread.currentThread().setContextClassLoader(null);
+            Thread.currentThread().setContextClassLoader(org.apache.kafka.clients.consumer.KafkaConsumer.class.getClassLoader());
 
             String jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"4SFcjqaw\";";
 
@@ -92,9 +92,12 @@ public class KafkaConsumerManager
             prop.put("sasl.jaas.config", jaasConfig);
             prop.put("security.protocol", securityProtocol);
             prop.put("sasl.mechanism", "PLAIN");
+            prop.put("ssl.truststore.location", "/Users/ashinohara/work/invitae-data/devops/docker/admin-tools/client-dev.truststore.jks");
+            prop.put("ssl.truststore.password", "invitae!");
             return new KafkaConsumer<byte[], byte[]>(prop);
         }
         catch (Exception e) {
+            log.error(e);
             throw Throwables.propagate(e.getCause());
         }
     }

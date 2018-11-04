@@ -16,14 +16,17 @@ package com.facebook.presto.kafka;
 import com.facebook.presto.spi.ConnectorHandleResolver;
 import com.facebook.presto.spi.NodeManager;
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.Connector;
 import com.facebook.presto.spi.connector.ConnectorContext;
 import com.facebook.presto.spi.connector.ConnectorFactory;
+import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorSplitManager;
 import com.facebook.presto.spi.type.TypeManager;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import io.airlift.bootstrap.Bootstrap;
+import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.json.JsonModule;
 
 import java.util.Map;
@@ -40,10 +43,13 @@ public class KafkaConnectorFactory
         implements ConnectorFactory
 {
     private final Optional<Supplier<Map<SchemaTableName, KafkaTopicDescription>>> tableDescriptionSupplier;
+    private final ClassLoader classLoader;
 
-    KafkaConnectorFactory(Optional<Supplier<Map<SchemaTableName, KafkaTopicDescription>>> tableDescriptionSupplier)
+    KafkaConnectorFactory(Optional<Supplier<Map<SchemaTableName, KafkaTopicDescription>>> tableDescriptionSupplier,
+                          ClassLoader classLoader)
     {
         this.tableDescriptionSupplier = requireNonNull(tableDescriptionSupplier, "tableDescriptionSupplier is null");
+        this.classLoader = requireNonNull(classLoader, "classLoader is null");
     }
 
     @Override
@@ -64,7 +70,7 @@ public class KafkaConnectorFactory
         requireNonNull(catalogName, "catalogName is null");
         requireNonNull(config, "config is null");
 
-        try {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             Bootstrap app = new Bootstrap(
                     new JsonModule(),
                     new KafkaConnectorModule(),
@@ -86,7 +92,16 @@ public class KafkaConnectorFactory
                     .setRequiredConfigurationProperties(config)
                     .initialize();
 
-            return injector.getInstance(KafkaConnector.class);
+            LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
+            KafkaMetadata metadata = injector.getInstance(KafkaMetadata.class);
+            KafkaSplitManager splitManager = injector.getInstance(KafkaSplitManager.class);
+            KafkaRecordSetProvider recordSetProvider = injector.getInstance(KafkaRecordSetProvider.class);
+
+            return new KafkaConnector(lifeCycleManager,
+                    metadata,
+                    new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
+                    recordSetProvider,
+                    classLoader);
         }
         catch (Exception e) {
             throwIfUnchecked(e);

@@ -18,6 +18,8 @@ import com.facebook.presto.spi.connector.ConnectorMetadata;
 import com.facebook.presto.spi.connector.ConnectorRecordSetProvider;
 import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorMetadata;
+import com.facebook.presto.spi.connector.classloader.ClassLoaderSafeConnectorSplitManager;
 import com.facebook.presto.spi.transaction.IsolationLevel;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.log.Logger;
@@ -38,20 +40,23 @@ public class KafkaConnector
 
     private final LifeCycleManager lifeCycleManager;
     private final KafkaMetadata metadata;
-    private final KafkaSplitManager splitManager;
-    private final KafkaRecordSetProvider recordSetProvider;
+    private final ConnectorSplitManager splitManager;
+    private final ConnectorRecordSetProvider recordSetProvider;
+    private final ClassLoader classLoader;
 
     @Inject
     public KafkaConnector(
             LifeCycleManager lifeCycleManager,
             KafkaMetadata metadata,
-            KafkaSplitManager splitManager,
-            KafkaRecordSetProvider recordSetProvider)
+            ConnectorSplitManager splitManager,
+            ConnectorRecordSetProvider recordSetProvider,
+            ClassLoader classLoader)
     {
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.recordSetProvider = requireNonNull(recordSetProvider, "recordSetProvider is null");
+        this.classLoader = requireNonNull(classLoader, "classLoader is null");
     }
 
     @Override
@@ -64,13 +69,13 @@ public class KafkaConnector
     @Override
     public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle)
     {
-        return metadata;
+        return new ClassLoaderSafeConnectorMetadata(metadata, classLoader);
     }
 
     @Override
     public ConnectorSplitManager getSplitManager()
     {
-        return splitManager;
+        return new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader);
     }
 
     @Override

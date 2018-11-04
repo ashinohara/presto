@@ -14,6 +14,8 @@
 package com.facebook.presto.kafka;
 
 import com.facebook.presto.decoder.DecoderModule;
+import com.facebook.presto.spi.connector.ConnectorRecordSetProvider;
+import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -39,11 +41,11 @@ public class KafkaConnectorModule
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(KafkaConnector.class).in(Scopes.SINGLETON);
-
         binder.bind(KafkaMetadata.class).in(Scopes.SINGLETON);
         binder.bind(KafkaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(KafkaRecordSetProvider.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorSplitManager.class).to(KafkaSplitManager.class).in(Scopes.SINGLETON);
+        binder.bind(ConnectorRecordSetProvider.class).to(KafkaRecordSetProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(KafkaConsumerManager.class).in(Scopes.SINGLETON);
 
