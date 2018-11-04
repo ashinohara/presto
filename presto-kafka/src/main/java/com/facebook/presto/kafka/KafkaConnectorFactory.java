@@ -24,7 +24,6 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import io.airlift.bootstrap.Bootstrap;
-import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.json.JsonModule;
 
 import java.util.Map;
@@ -87,15 +86,7 @@ public class KafkaConnectorFactory
                     .setRequiredConfigurationProperties(config)
                     .initialize();
 
-            LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-            KafkaMetadata metadata = injector.getInstance(KafkaMetadata.class);
-            KafkaSplitManager splitManager = injector.getInstance(KafkaSplitManager.class);
-            KafkaRecordSetProvider recordSetProvider = injector.getInstance(KafkaRecordSetProvider.class);
-
-            return new KafkaConnector(lifeCycleManager,
-                    metadata,
-                    splitManager,
-                    recordSetProvider);
+            return injector.getInstance(KafkaConnector.class);
         }
         catch (Exception e) {
             throwIfUnchecked(e);
