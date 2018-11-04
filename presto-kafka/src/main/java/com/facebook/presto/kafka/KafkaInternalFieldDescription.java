@@ -16,6 +16,8 @@ package com.facebook.presto.kafka;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.type.BigintType;
 import com.facebook.presto.spi.type.BooleanType;
+import com.facebook.presto.spi.type.SmallintType;
+import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
 
 import java.util.Map;
@@ -89,7 +91,17 @@ public enum KafkaInternalFieldDescription
     /**
      * <tt>_key_length</tt> - length in bytes of the key.
      */
-    KEY_LENGTH_FIELD("_key_length", BigintType.BIGINT, "Total number of key bytes");
+    KEY_LENGTH_FIELD("_key_length", BigintType.BIGINT, "Total number of key bytes"),
+
+    /**
+     * <tt>_message_timestamp</tt> - Message Timestamp.
+     */
+    MESSAGE_TIMESTAMP_FIELD("_message_timestamp", TimestampType.TIMESTAMP, "Message Timestamp"),
+
+    /**
+     * <tt>_message_timestamp_type</tt> - Message Timestamp Type.
+     */
+    MESSAGE_TIMESTAMP_TYPE_FIELD("_message_timestamp_type", SmallintType.SMALLINT, "Message Timestamp Type");
 
     private static final Map<String, KafkaInternalFieldDescription> BY_COLUMN_NAME =
             stream(KafkaInternalFieldDescription.values())

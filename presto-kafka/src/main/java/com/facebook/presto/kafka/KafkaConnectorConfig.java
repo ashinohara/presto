@@ -69,6 +69,18 @@ public class KafkaConnectorConfig
      */
     private boolean hideInternalColumns = true;
 
+    public enum SecurityProtocol
+    {
+        PLAINTEXT, SASL_PLAINTEXT, SASL_SSL
+    }
+
+    /**
+     * Security protocol to connect to the broker, default is plain text
+     */
+    private SecurityProtocol securityProtocol = SecurityProtocol.PLAINTEXT;
+
+    private boolean autoCommit = true;
+
     @NotNull
     public File getTableDescriptionDir()
     {
@@ -167,5 +179,30 @@ public class KafkaConnectorConfig
     private static HostAddress toHostAddress(String value)
     {
         return HostAddress.fromString(value).withDefaultPort(KAFKA_DEFAULT_PORT);
+    }
+
+    @Config("kafka.security-protocol")
+    public KafkaConnectorConfig setSecurityProtocol(SecurityProtocol securityProtocol)
+    {
+        this.securityProtocol = securityProtocol;
+        return this;
+    }
+
+    @NotNull
+    public SecurityProtocol getSecurityProtocol()
+    {
+        return securityProtocol;
+    }
+
+    @Config("kafka.auto-commit")
+    public KafkaConnectorConfig setAutoCommit(boolean autoCommit)
+    {
+        this.autoCommit = autoCommit;
+        return this;
+    }
+
+    public boolean isAutoCommit()
+    {
+        return autoCommit;
     }
 }

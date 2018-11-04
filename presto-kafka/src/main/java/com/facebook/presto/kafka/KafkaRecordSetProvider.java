@@ -41,10 +41,10 @@ public class KafkaRecordSetProvider
         implements ConnectorRecordSetProvider
 {
     private DispatchingRowDecoderFactory decoderFactory;
-    private final KafkaSimpleConsumerManager consumerManager;
+    private final KafkaConsumerManager consumerManager;
 
     @Inject
-    public KafkaRecordSetProvider(DispatchingRowDecoderFactory decoderFactory, KafkaSimpleConsumerManager consumerManager)
+    public KafkaRecordSetProvider(DispatchingRowDecoderFactory decoderFactory, KafkaConsumerManager consumerManager)
     {
         this.decoderFactory = requireNonNull(decoderFactory, "decoderFactory is null");
         this.consumerManager = requireNonNull(consumerManager, "consumerManager is null");
