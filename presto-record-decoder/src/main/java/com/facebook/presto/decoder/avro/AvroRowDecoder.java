@@ -17,14 +17,16 @@ import com.facebook.presto.decoder.DecoderColumnHandle;
 import com.facebook.presto.decoder.FieldValueProvider;
 import com.facebook.presto.decoder.RowDecoder;
 import com.facebook.presto.spi.PrestoException;
+import io.confluent.kafka.serializers.KafkaAvroDecoder;
+import kafka.utils.VerifiableProperties;
 import org.apache.avro.file.DataFileStream;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 
 import static com.facebook.presto.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
@@ -55,19 +57,29 @@ public class AvroRowDecoder
     @Override
     public Optional<Map<DecoderColumnHandle, FieldValueProvider>> decodeRow(byte[] data, Map<String, String> dataMap)
     {
+        Properties props = new Properties();
+//        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+//                io.confluent.kafka.serializers.KafkaAvroSerializer.class);
+//        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+//                io.confluent.kafka.serializers.KafkaAvroSerializer.class);
+        props.put("schema.registry.url", "http://schema-registry.dataeng-dev.locusdev.net:8081");
+        //props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
+        VerifiableProperties vProps = new VerifiableProperties(props);
+        KafkaAvroDecoder decoder = new KafkaAvroDecoder(vProps);
+
         GenericRecord avroRecord;
         DataFileStream<GenericRecord> dataFileReader = null;
         try {
             // Assumes producer uses DataFileWriter or data comes in this particular format.
             // TODO: Support other forms for producers
-            dataFileReader = new DataFileStream<>(new ByteArrayInputStream(data), avroRecordReader);
-            if (!dataFileReader.hasNext()) {
-                throw new PrestoException(GENERIC_INTERNAL_ERROR, "No avro record found");
-            }
-            avroRecord = dataFileReader.next();
-            if (dataFileReader.hasNext()) {
-                throw new PrestoException(GENERIC_INTERNAL_ERROR, "Unexpected extra record found");
-            }
+//            dataFileReader = new DataFileStream<>(new ByteArrayInputStream(data), avroRecordReader);
+//            if (!dataFileReader.hasNext()) {
+//                throw new PrestoException(GENERIC_INTERNAL_ERROR, "No avro record found");
+//            }
+            avroRecord = (GenericRecord) decoder.fromBytes(data);
+//            if (dataFileReader.hasNext()) {
+//                throw new PrestoException(GENERIC_INTERNAL_ERROR, "Unexpected extra record found");
+//            }
         }
         catch (Exception e) {
             throw new PrestoException(GENERIC_INTERNAL_ERROR, "Decoding Avro record failed.", e);
